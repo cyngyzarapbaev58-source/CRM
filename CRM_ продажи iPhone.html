@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CRM: продажи iPhone</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fde8f1;--card:#fff7fb;--ink:#3b1226;--mute:#9a5b78;--line:#f3c3d8;--acc:#e0348a;--ok:#b3125f;--bad:#8e2a4a;--col:#f9d3e4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a0f1d;--card:#3a1528;--ink:#ffe3ef;--mute:#e0a3c0;--line:#5a2640;--acc:#f0509a;--ok:#ff9ccb;--bad:#ff8fa8;--col:#331224}}
+:root[data-theme="dark"]{--bg:#2a0f1d;--card:#3a1528;--ink:#ffe3ef;--mute:#e0a3c0;--line:#5a2640;--acc:#f0509a;--ok:#ff9ccb;--bad:#ff8fa8;--col:#331224}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Onest,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 16px 8px;max-width:1400px;margin:0 auto}
+h1{margin:0 0 14px;font-size:24px;font-weight:700;letter-spacing:-.01em}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:13px}
+.stat.hero{background:var(--acc);color:#fff;border-color:var(--acc)}
+.stat.hero span{color:#fff;opacity:.85}
+.bar{display:flex;gap:8px;padding:8px 16px 12px;max-width:1400px;margin:0 auto}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 14px}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:500;white-space:nowrap}
+.board{display:flex;gap:10px;overflow-x:auto;padding:0 16px 24px;max-width:1400px;margin:0 auto;scroll-snap-type:x proximity}
+.col{flex:0 0 280px;background:var(--col);border-radius:12px;padding:10px;scroll-snap-align:start;min-height:200px}
+.col h2{margin:2px 4px 10px;font-size:15px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.col h2 small{color:var(--mute);font-weight:400;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.card .top{display:flex;justify-content:space-between;gap:8px;font-weight:500}
+.price{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.model{margin:2px 0;font-size:14px}
+.meta{color:var(--mute);font-size:13px;word-break:break-word}
+.meta a{color:var(--acc);text-decoration:none}
+.acts{display:flex;gap:6px;margin-top:8px}
+.acts select{padding:6px;font-size:13px}
+.acts button{padding:6px 10px;font-size:13px}
+.col[data-s=sold] .price{color:var(--ok)}
+.col[data-s=lost] .card{opacity:.65}
+.empty{color:var(--mute);font-size:13px;padding:6px 4px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);width:min(460px,calc(100% - 24px));padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .w{grid-column:1/-1}
+label{font-size:13px;color:var(--mute);display:block}
+label>*{margin-top:3px;color:var(--ink)}
+.row{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media(max-width:520px){.col{flex-basis:84%}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Продажи iPhone</h1>
+  <div class="stats" id="stats"></div>
+</header>
+<div class="bar">
+  <input id="q" type="search" placeholder="Поиск по имени, телефону, модели" aria-label="Поиск">
+  <button class="pri" id="add">Новая сделка</button>
+</div>
+<main class="board" id="board"></main>
+
+<dialog id="dlg">
+  <form id="f" method="dialog" onsubmit="return false">
+    <h3 id="dt">Новая сделка</h3>
+    <div class="grid">
+      <label>Клиент<input id="name" required></label>
+      <label>Телефон<input id="phone" type="tel"></label>
+      <label class="w">Модель<select id="model"></select></label>
+      <label>Память<select id="mem"><option>128 ГБ</option><option>256 ГБ</option><option>512 ГБ</option><option>1 ТБ</option></select></label>
+      <label>Цвет<input id="color" placeholder="Чёрный титан"></label>
+      <label>Цена, ₽<input id="price" type="number" min="0" step="500" required></label>
+      <label>Этап<select id="stage"></select></label>
+      <label class="w">Заметка<textarea id="note" rows="2" placeholder="Trade-in, рассрочка, время звонка"></textarea></label>
+    </div>
+    <div class="row"><button type="button" id="cancel">Отмена</button><button class="pri" id="save">Сохранить</button></div>
+  </form>
+</dialog>
+
+<script>
+const STAGES=[["new","Новые"],["talk","Переговоры"],["pay","Ждём оплату"],["sold","Продано"],["lost","Отказ"]];
+const MODELS=["iPhone 17 Pro Max","iPhone 17 Pro","iPhone Air","iPhone 17","iPhone 16","iPhone 16e","iPhone 15","Другая модель"];
+const KEY="iphone-crm-v1";
+let deals=[],editId=null;
+try{deals=JSON.parse(localStorage.getItem(KEY)||"null")||[]}catch(e){deals=[]}
+if(!deals.length)deals=[
+ {id:1,name:"Алексей Смирнов",phone:"+7 900 123-45-67",model:"iPhone 17 Pro",mem:"256 ГБ",color:"Космический оранжевый",price:119990,stage:"talk",note:"Сдаёт iPhone 14 в trade-in"},
+ {id:2,name:"Мария К.",phone:"+7 911 555-01-02",model:"iPhone 16",mem:"128 ГБ",color:"Ультрамарин",price:72990,stage:"new",note:""},
+ {id:3,name:"Дмитрий П.",phone:"+7 926 777-88-99",model:"iPhone 17 Pro Max",mem:"512 ГБ",color:"Тёмно-синий",price:159990,stage:"sold",note:"Оплата картой"}];
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(deals))}catch(e){}};
+const $=id=>document.getElementById(id);
+const rub=n=>Number(n||0).toLocaleString("ru-RU")+" ₽";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("model").innerHTML=MODELS.map(m=>`<option>${m}</option>`).join("");
+$("stage").innerHTML=STAGES.map(s=>`<option value="${s[0]}">${s[1]}</option>`).join("");
+
+function render(){
+  const q=$("q").value.trim().toLowerCase();
+  const list=deals.filter(d=>!q||[d.name,d.phone,d.model,d.color,d.note].join(" ").toLowerCase().includes(q));
+  $("board").innerHTML=STAGES.map(([k,t])=>{
+    const c=list.filter(d=>d.stage===k),sum=c.reduce((a,d)=>a+Number(d.price||0),0);
+    return `<section class="col" data-s="${k}"><h2>${t}<small>${c.length} · ${rub(sum)}</small></h2>`+
+    (c.length?c.map(cardHtml).join(""):`<div class="empty">Пока пусто</div>`)+`</section>`}).join("");
+  const sold=deals.filter(d=>d.stage==="sold"),lost=deals.filter(d=>d.stage==="lost"),open=deals.filter(d=>!["sold","lost"].includes(d.stage));
+  const rev=sold.reduce((a,d)=>a+Number(d.price||0),0),closed=sold.length+lost.length;
+  $("stats").innerHTML=
+   `<div class="stat hero"><b>${rub(rev)}</b><span>Выручка</span></div>`+
+   `<div class="stat"><b>${sold.length}</b><span>Продано</span></div>`+
+   `<div class="stat"><b>${open.length}</b><span>В работе на ${rub(open.reduce((a,d)=>a+Number(d.price||0),0))}</span></div>`+
+   `<div class="stat"><b>${closed?Math.round(sold.length/closed*100):0}%</b><span>Конверсия</span></div>`+
+   `<div class="stat"><b>${sold.length?rub(Math.round(rev/sold.length)):"—"}</b><span>Средний чек</span></div>`;
+}
+function cardHtml(d){
+  const tel=d.phone?`<a href="tel:${esc(d.phone.replace(/[^+\d]/g,""))}">${esc(d.phone)}</a>`:"";
+  return `<article class="card"><div class="top"><span>${esc(d.name)}</span><span class="price">${rub(d.price)}</span></div>
+  <div class="model">${esc(d.model)}, ${esc(d.mem)}${d.color?", "+esc(d.color):""}</div>
+  <div class="meta">${tel}${d.note?(tel?" · ":"")+esc(d.note):""}</div>
+  <div class="acts"><select data-mv="${d.id}" aria-label="Этап">${STAGES.map(s=>`<option value="${s[0]}"${s[0]===d.stage?" selected":""}>${s[1]}</option>`).join("")}</select>
+  <button data-ed="${d.id}">Изменить</button><button data-del="${d.id}" aria-label="Удалить">Удалить</button></div></article>`;
+}
+function openForm(d){
+  editId=d?d.id:null;$("dt").textContent=d?"Редактировать сделку":"Новая сделка";
+  const v=d||{name:"",phone:"",model:MODELS[0],mem:"256 ГБ",color:"",price:"",stage:"new",note:""};
+  ["name","phone","model","mem","color","price","stage","note"].forEach(k=>$(k).value=v[k]);
+  $("dlg").showModal();$("name").focus();
+}
+$("add").onclick=()=>openForm();
+$("cancel").onclick=()=>$("dlg").close();
+$("save").onclick=()=>{
+  if(!$("f").reportValidity())return;
+  const v={};["name","phone","model","mem","color","price","stage","note"].forEach(k=>v[k]=$(k).value.trim());
+  v.price=Number(v.price);
+  if(editId){deals=deals.map(d=>d.id===editId?{...d,...v}:d)}else{deals.unshift({id:Date.now(),...v})}
+  save();render();$("dlg").close();
+};
+$("q").oninput=render;
+$("board").addEventListener("click",e=>{
+  const ed=e.target.dataset.ed,del=e.target.dataset.del;
+  if(ed)openForm(deals.find(d=>d.id==ed));
+  if(del&&confirm("Удалить сделку?")){deals=deals.filter(d=>d.id!=del);save();render()}
+});
+$("board").addEventListener("change",e=>{
+  const id=e.target.dataset.mv;if(!id)return;
+  deals=deals.map(d=>d.id==id?{...d,stage:e.target.value}:d);save();render();
+});
+render();
+</script>
+</body>
+</html>
